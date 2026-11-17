@@ -15,11 +15,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
+# Modified 2026-11-17 by Jonny Rose for jarvis-voice: --agent flag, and the
+# voice connects itself to a vault-template agent after install. See CHANGES.md.
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # backtalk installer — environment, engines, models. Run once.
 # Safe to re-run; every step skips what's already done.
+#
+#   ./install.sh [--no-models] [--agent ~/path/to/agent]
 set -e
 cd "$(dirname "$0")"
+NO_MODELS=0
+AGENT_ARG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-models) NO_MODELS=1; shift ;;
+    --agent) AGENT_ARG="${2:-}"; shift 2 ;;
+    *) echo "unknown option: $1"; exit 1 ;;
+  esac
+done
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 echo "== backtalk install =="
@@ -73,7 +86,7 @@ uv venv .venv -q 2>/dev/null || true
 uv pip install --python .venv/bin/python -q -e .
 
 # --- prefetch the models so the first conversation doesn't wait ---
-if [ "$1" != "--no-models" ]; then
+if [ "$NO_MODELS" = 0 ]; then
   echo "-- downloading the speech models (first run only, ~1GB total)"
   .venv/bin/python - <<'PY'
 import warnings; warnings.filterwarnings("ignore")
@@ -86,13 +99,20 @@ PY
 fi
 
 echo ""
-echo "== backtalk installed =="
+echo "== jarvis-voice installed =="
 echo ""
-echo "Next:"
-echo "  1. Point it at your agent: edit backtalk.json (agent_dir + name),"
-echo "     or open this folder in Claude Code and say:"
-echo "         read backtalk.md and set me up"
-echo "  2. ./run.sh — hold the key, talk, let go."
+# Connect to the agent: reads its name and vault from its CLAUDE.md.
+# Leaves an existing backtalk.json alone.
+if ./connect-agent.sh ${AGENT_ARG:+"$AGENT_ARG"}; then
+  echo ""
+  echo "Next: ./run.sh — hold the Home key, talk, let go."
+else
+  echo ""
+  echo "Next:"
+  echo "  1. Point it at your agent: ./connect-agent.sh ~/path/to/agent"
+  echo "     (or open this folder in Claude Code and say: read backtalk.md and set me up)"
+  echo "  2. ./run.sh — hold the key, talk, let go."
+fi
 echo ""
 echo "macOS: the FIRST run will ask for Microphone permission, and the"
 echo "hold-to-talk key needs Input Monitoring for your terminal app"
