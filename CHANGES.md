@@ -20,7 +20,7 @@ The code keeps the name `backtalk` inside (the Python package, `backtalk.json`, 
 - `backtalk.md` (setup wizard): points at jarvis-vault-template for agents, offers `add-elevenlabs.sh`, and drops the face, hands and installer sections, which belong to the upstream stack.
 - `update.sh`, `update.bat`: update from this repo.
 - `CONTRIBUTING.md`: issues for this copy go here; issues in backtalk's own code go upstream.
-- `TROUBLESHOOTING.md`: covers the two new scripts.
+- `TROUBLESHOOTING.md`: covers the two new scripts, and the silent exit when the install folder is too deep for espeak-ng.
 
 ## Keeping up with upstream
 
