@@ -1,6 +1,7 @@
 @echo off
 rem backtalk -- updating has moved. This script does nothing now.
 rem Copyright (C) 2026 Jared Rhodenizer
+rem Modified 2026-11-17 by Jonny Rose for jarvis-voice: updates from this repo. See CHANGES.md.
 rem SPDX-License-Identifier: AGPL-3.0-or-later
 rem
 rem WHY THIS IS EMPTY, because the reason is worth knowing before anyone
@@ -30,7 +31,7 @@ rem
 rem If this folder has no .git yet because it arrived as a zip, an agent
 rem can wire it up once, keeping backtalk.json:
 rem   git init -b main
-rem   git remote add origin https://github.com/jaredrhod/backtalk
+rem   git remote add origin https://github.com/jonny-rose/jarvis-voice
 rem   git fetch origin
 rem   git reset --hard origin/main
 

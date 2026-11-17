@@ -1,9 +1,13 @@
 # Troubleshooting
 
+*From backtalk by Jared Rhodenizer; jarvis-voice additions are marked (jarvis-voice). See CHANGES.md.*
+
 Written for humans AND for AI assistants. If you're an AI helping someone debug backtalk: read this whole file first, then `logs/backtalk.log`; every load-bearing event (what was heard, what was said, interrupts, engine fallbacks, session rebuilds) is in there. Diagnose from the log, not from guesses.
 
 ## Quick fixes
 
+- **The voice talks to the wrong agent, or uses the wrong name** (jarvis-voice): `backtalk.json` points somewhere else. Rename it to `backtalk.json.old.bak` and run `./connect-agent.sh ~/path/to/agent`, which rewrites it from the agent's `CLAUDE.md`. Without an argument, it looks for `../agent`.
+- **`./add-elevenlabs.sh` says the key was refused** (jarvis-voice): the stored key is wrong or expired. On macOS, open Keychain Access, delete the item `backtalk-elevenlabs`, and run the script again to enter a new key. "Couldn't reach ElevenLabs" means a network problem, not the key.
 - **`ModuleNotFoundError: No module named 'claude_agent_sdk'` (or any missing module) at launch**: backtalk's Python packages never finished installing, or the environment drifted. From the backtalk folder run `uv sync`, which installs everything from the shipped package list, then launch again. (Launchers updated after this was found in the field run the repair automatically; if yours predates that, update backtalk.) If `uv sync` itself errors, run `uv venv .venv` then `uv pip install -e .` instead.
 - **The greeting speaks, then it goes idle and ignores the key (open mic too)**: the step right after the greeting is connecting to Claude Code, the brain, and that connection failed or hung. It is the one startup step that needs a signed-in Claude Code, internet, and available plan usage. The voice line now says this failure out loud and the window stays open with the error; the ladder to fix it: run `claude` in a terminal and confirm a session opens signed in, check your internet, check your plan has usage left. The log agrees: `logs/backtalk.log` ending at "connecting the brain..." with no "brain warm" after it is exactly this failure. Your browser choice has nothing to do with it; the visualizer only displays.
 - **Nothing happens when I hold the key (macOS)**: the terminal app needs **Input Monitoring** permission: System Settings → Privacy & Security → Input Monitoring → add your terminal (Terminal, iTerm, etc.), then restart the terminal. The mic prompt is separate and appears on first recording.
