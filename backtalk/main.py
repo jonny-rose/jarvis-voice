@@ -1,5 +1,7 @@
 # backtalk: talk to your Claude Code agent out loud.
 # Copyright (C) 2026 Jared Rhodenizer
+# Modified 2026-11-17 by Jonny Rose for jarvis-voice: markdown is stripped
+# from replies before they are spoken (_unmarkdown). See CHANGES.md.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -407,6 +409,22 @@ _PASTE_OFF = "\x1b[201~"
 # swallow a paragraph into one "tag".
 _DIRECTION_TAG = re.compile(r"<<([^<>]{1,80})>>")
 
+# Markdown the model slips into spoken replies (bold labels, bullets,
+# headings, wikilinks, links). The prompt asks for none; this is the
+# guarantee, because the TTS reads or chokes on whatever it is handed.
+_MD_LINK = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\([^)]*\)")
+_MD_BULLET = re.compile(r"(?:^|\s)[-*•]\s+(?=[A-Z\"'])|(?:^|(?<=:))\s*\d+\.\s+(?=\S)")
+_MD_MARKS = re.compile(r"\*\*|__|(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)|^#{1,6}\s*")
+
+
+def _unmarkdown(s: str) -> str:
+    """Spoken-text hygiene: keep the words, drop the formatting."""
+    s = _MD_LINK.sub(lambda m: m.group(2) or m.group(1) or m.group(3), s)
+    s = _MD_MARKS.sub("", s)
+    s = _MD_BULLET.sub(", ", s)
+    s = re.sub(r":\s*,\s*", ": ", s)
+    return re.sub(r"^\s*,\s*", "", s)
+
 
 def _clean_typed(line: str) -> str:
     """Scrub terminal-copy artifacts: blockquote gutter glyphs and stray
@@ -602,7 +620,7 @@ async def speak_reply(brain: WarmBrain, mouth: Mouth, text: str):
             pending += [d.strip() for d in found if d.strip()]
         raw = _DIRECTION_TAG.sub(" ", raw)
         # TTS hygiene: backticks and markdown fences are never speakable.
-        s = " ".join(raw.replace("`", "").split()).strip()
+        s = _unmarkdown(" ".join(raw.replace("`", "").split()).strip())
         if not s:
             return
         if first:

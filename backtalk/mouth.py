@@ -1,5 +1,7 @@
 # backtalk: talk to your Claude Code agent out loud.
 # Copyright (C) 2026 Jared Rhodenizer
+# Modified 2026-11-17 by Jonny Rose for jarvis-voice: logs a warning when
+# ElevenLabs is enabled but has no voice or key. See CHANGES.md.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -310,10 +312,22 @@ def _get_elevenlabs_key() -> str:
     return _el_key_cache
 
 
+_el_warned = False
+
+
 def _elevenlabs_ready() -> bool:
+    global _el_warned
     el = CFG["elevenlabs"]
-    return bool(el.get("enabled") and el.get("voice_id")
-                and _get_elevenlabs_key())
+    ready = bool(el.get("enabled") and el.get("voice_id")
+                 and _get_elevenlabs_key())
+    # jarvis-voice: an enabled-but-unusable config used to fall back to Kokoro
+    # silently. Say so once per run, so an empty key can't hide.
+    if el.get("enabled") and not ready and not _el_warned:
+        _el_warned = True
+        why = ("no voice_id set" if not el.get("voice_id")
+               else f"no key found in '{_key_slot()}' or ELEVENLABS_API_KEY")
+        log(f"[mouth] elevenlabs enabled but {why} — using {CFG['voice']}")
+    return ready
 
 
 def synth_stream(text: str, timeout: float = 30.0):
